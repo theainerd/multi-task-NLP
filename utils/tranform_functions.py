@@ -9,6 +9,8 @@ from tqdm import tqdm
 from collections import defaultdict
 from statistics import median
 from sklearn.model_selection import train_test_split
+from csv import reader
+
 SEED = 42
 
 def bio_ner_to_tsv(dataDir, readFile, wrtDir, transParamDict, isTrainFile=False):
@@ -27,12 +29,12 @@ def bio_ner_to_tsv(dataDir, readFile, wrtDir, transParamDict, isTrainFile=False)
         readFile (:obj:`str`) : This is the file which is currently being read and transformed by the function.
         wrtDir (:obj:`str`) : Path to the directory where to save the transformed tsv files.
         transParamDict (:obj:`dict`, defaults to :obj:`None`): Dictionary requiring the following parameters as key-value
-            
+
             - ``save_prefix`` (defaults to 'bio_ner') : save file name prefix.
             - ``col_sep`` : (defaults to " ") : separator for columns
             - ``tag_col`` (defaults to 1) : column number where label NER tag is present for each row. Counting starts from 0.
-            - ``sen_sep`` (defaults to " ") : end of sentence separator. 
-    
+            - ``sen_sep`` (defaults to " ") : end of sentence separator.
+
     """
 
     transParamDict.setdefault("save_prefix", "bio_ner")
@@ -42,7 +44,7 @@ def bio_ner_to_tsv(dataDir, readFile, wrtDir, transParamDict, isTrainFile=False)
 
     f = open(os.path.join(dataDir,readFile))
 
-    nerW = open(os.path.join(wrtDir, '{}_{}.tsv'.format(transParamDict["save_prefix"], 
+    nerW = open(os.path.join(wrtDir, '{}_{}.tsv'.format(transParamDict["save_prefix"],
                                                         readFile.split('.')[0])), 'w')
     labelMapNer = {}
     sentence = []
@@ -71,7 +73,7 @@ def bio_ner_to_tsv(dataDir, readFile, wrtDir, transParamDict, isTrainFile=False)
             if wordSplit[int(transParamDict["tag_col"])] not in labelMapNer:
                 # ONLY TRAIN FILE SHOULD BE USED TO CREATE LABEL MAP FILE.
                 labelMapNer[wordSplit[-1]] = len(labelMapNer)
-    
+
     print("NER File Written at {}".format(wrtDir))
     #writing label map
     if labelMapNer != {} and isTrainFile:
@@ -87,12 +89,12 @@ def bio_ner_to_tsv(dataDir, readFile, wrtDir, transParamDict, isTrainFile=False)
 
     print('Max len of sentence: ', max(senLens))
     print('Mean len of sentences: ', sum(senLens)/len(senLens))
-    print('Median len of sentences: ', median(senLens))    
+    print('Median len of sentences: ', median(senLens))
 
 def snips_intent_ner_to_tsv(dataDir, readFile, wrtDir, transParamDict, isTrainFile=False):
 
     """
-    This function transforms the data present in snips_data/. 
+    This function transforms the data present in snips_data/.
     Raw data is in BIO tagged format with the sentence intent specified at the end of each sentence.
     The transformation function converts the each raw data file into two separate tsv files,
     one for intent classification task and another for NER task. Following transformed files are written at wrtDir
@@ -171,12 +173,12 @@ def snips_intent_ner_to_tsv(dataDir, readFile, wrtDir, transParamDict, isTrainFi
     f.close()
     nerW.close()
     intW.close()
-    
+
 
 def coNLL_ner_pos_to_tsv(dataDir, readFile, wrtDir, transParamDict, isTrainFile=False):
-    
+
     """
-    This function transforms the data present in coNLL_data/. 
+    This function transforms the data present in coNLL_data/.
     Raw data is in BIO tagged format with the POS and NER tags separated by space.
     The transformation function converts the each raw data file into two separate tsv files,
     one for POS tagging task and another for NER task. Following transformed files are written at wrtDir
@@ -196,8 +198,9 @@ def coNLL_ner_pos_to_tsv(dataDir, readFile, wrtDir, transParamDict, isTrainFile=
 
     """
 
-    
-    f = open(os.path.join(dataDir, readFile))
+
+    csv_file = open(os.path.join(dataDir, readFile))
+    f = reader(csv_file)
 
     nerW = open(os.path.join(wrtDir, 'ner_{}.tsv'.format(readFile.split('.')[0])), 'w')
     posW = open(os.path.join(wrtDir, 'pos_{}.tsv'.format(readFile.split('.')[0])), 'w')
@@ -229,7 +232,7 @@ def coNLL_ner_pos_to_tsv(dataDir, readFile, wrtDir, transParamDict, isTrainFile=
                 labelPos = []
                 uid += 1
             continue
-            
+
         sentence.append(wordSplit[0])
         labelPos.append(wordSplit[-2])
         labelNer.append(wordSplit[-1])
@@ -239,7 +242,7 @@ def coNLL_ner_pos_to_tsv(dataDir, readFile, wrtDir, transParamDict, isTrainFile=
                 labelMapNer[wordSplit[-1]] = len(labelMapNer)
             if wordSplit[-2] not in labelMapPos:
                 labelMapPos[wordSplit[-2]] = len(labelMapPos)
-    
+
     print("NER File Written at {}".format(wrtDir))
     print("POS File Written at {}".format(wrtDir))
     #writing label map
@@ -268,8 +271,8 @@ def coNLL_ner_pos_to_tsv(dataDir, readFile, wrtDir, transParamDict, isTrainFile=
 def snli_entailment_to_tsv(dataDir, readFile, wrtDir, transParamDict, isTrainFile=False):
 
     """
-    This function transforms the SNLI entailment data available at `SNLI <https://nlp.stanford.edu/projects/snli/snli_1.0.zip>`_ 
-    for sentence pair entailment task. Contradiction and neutral labels are mapped to 0 representing non-entailment scenario. Only 
+    This function transforms the SNLI entailment data available at `SNLI <https://nlp.stanford.edu/projects/snli/snli_1.0.zip>`_
+    for sentence pair entailment task. Contradiction and neutral labels are mapped to 0 representing non-entailment scenario. Only
     entailment label is mapped to 1, representing an entailment scenario. Following transformed files are written at wrtDir
 
     - Sentence pair transformed tsv file for entailment task
@@ -300,9 +303,9 @@ def snli_entailment_to_tsv(dataDir, readFile, wrtDir, transParamDict, isTrainFil
         label = mapping[row["gold_label"]]
         posCnt += label
         w.write("{}\t{}\t{}\t{}\n".format(row["pairID"], label, row["sentence1"], row["sentence2"]))
-    
+
     print('File written at: ', os.path.join(wrtDir, 'entailment_{}.tsv'.format(readFile.lower().replace('.jsonl', ''))))
-    
+
     print('total number of samples: {}'.format(i+1))
     print('number of positive samples: {}'.format(posCnt))
     print("number of negative samples: {}".format(i+1 - posCnt))
@@ -370,7 +373,7 @@ def validate_sequences(sequence_dict, seq_len_right, seq_len_left):
         macro_sequences[sent] = 0
 
     return macro_sequences
-    
+
 def create_fragment_detection_tsv(dataDir, readFile, wrtDir, transParamDict, isTrainFile=False):
 
     """
@@ -388,7 +391,7 @@ def create_fragment_detection_tsv(dataDir, readFile, wrtDir, transParamDict, isT
         readFile (:obj:`str`) : This is the file which is currently being read and transformed by the function.
         wrtDir (:obj:`str`) : Path to the directory where to save the transformed tsv files.
         transParamDict (:obj:`dict`, defaults to :obj:`None`): Dictionary requiring the following parameters as key-value
-            
+
             - ``data_frac`` (defaults to 0.2) : Fraction of data to consider for making fragments.
             - ``seq_len_right`` : (defaults to 3) : Right window length for making n-grams.
             - ``seq_len_left`` (defaults to 2) : Left window length for making n-grams.
@@ -426,17 +429,17 @@ def create_fragment_detection_tsv(dataDir, readFile, wrtDir, transParamDict, isT
 
     finalDf.to_csv(os.path.join(wrtDir, 'fragment_{}.tsv'.format(readFile.split('.')[0])), sep='\t',
                 index=False, header=False)
-    
+
 
 def msmarco_answerability_detection_to_tsv(dataDir, readFile, wrtDir, transParamDict, isTrainFile=False):
     """
-    This function transforms the MSMARCO triples data available at `triples <https://msmarco.blob.core.windows.net/msmarcoranking/triples.train.small.tar.gz>`_ 
-    
+    This function transforms the MSMARCO triples data available at `triples <https://msmarco.blob.core.windows.net/msmarcoranking/triples.train.small.tar.gz>`_
+
     The data contains triplets where the first entry is the query, second one is the context passage from which the query can be
     answered (positive passage) , while the third entry is a context passage from which the query cannot be answered (negative passage).
-    Data is transformed into sentence pair classification format, with query-positive context pair labeled as 1 (answerable) 
+    Data is transformed into sentence pair classification format, with query-positive context pair labeled as 1 (answerable)
     and query-negative context pair labeled as 0 (non-answerable)
-    
+
     Following transformed files are written at wrtDir
 
     - Sentence pair transformed downsampled file.
@@ -460,19 +463,19 @@ def msmarco_answerability_detection_to_tsv(dataDir, readFile, wrtDir, transParam
     print('Making data from file {} ....'.format(readFile))
     rf = open(os.path.join(dataDir, readFile))
     sf = open(os.path.join(wrtDir, 'msmarco_triples_sampled.tsv'), 'w')
-    
+
     # reading the big file line by line
     for i, row in enumerate(rf):
         # sampling
         if i % 100000 == 0:
             print("Processing {} rows...".format(i))
-            
+
         if i % sampleEvery == 0:
             rowData = row.split('\t')
             posRowData = str(startId)+'\t'+str(1)+'\t'+ rowData[0]+'\t'+rowData[1]
             negRowData = str(startId+1)+'\t'+str(0)+'\t'+ rowData[0]+'\t'+rowData[2].rstrip('\n')
 
-            #AN IMPORTANT POINT HERE IS TO STRIP THE row ending '\n' present after the negative 
+            #AN IMPORTANT POINT HERE IS TO STRIP THE row ending '\n' present after the negative
             # passage, otherwise it will hamper the dataframe.
 
             #print(negRowData)
@@ -486,26 +489,26 @@ def msmarco_answerability_detection_to_tsv(dataDir, readFile, wrtDir, transParam
     print('Number of answerable samples in downsampled data: ', int(startId / 2))
     print('Number of non-answerable samples in downsampled data: ', int(startId / 2))
     print('Downsampled msmarco triples tsv saved at: {}'.format(os.path.join(wrtDir, 'msmarco_triples_sampled.tsv')))
-    
+
     #making train, test, dev split
     sampledDf = pd.read_csv(os.path.join(wrtDir, 'msmarco_triples_sampled.tsv'), sep='\t', header=None)
     trainDf, testDf = train_test_split(sampledDf, shuffle=True, random_state=SEED,
                                           test_size=0.02)
     trainDf.to_csv(os.path.join(wrtDir, 'msmarco_answerability_train.tsv'), sep='\t', index=False, header=False)
     print('Train file written at: ', os.path.join(wrtDir, 'msmarco_answerability_train.tsv'))
-    
+
     devDf, testDf = train_test_split(testDf, shuffle=True, random_state=SEED,
                                           test_size=0.5)
     devDf.to_csv(os.path.join(wrtDir, 'msmarco_answerability_dev.tsv'), sep='\t', index=False, header=False)
     print('Dev file written at: ', os.path.join(wrtDir, 'msmarco_answerability_dev.tsv'))
-    
+
     devDf.to_csv(os.path.join(wrtDir, 'msmarco_answerability_test.tsv'), sep='\t', index=False, header=False)
     print('Test file written at: ', os.path.join(wrtDir, 'msmarco_answerability_test.tsv'))
-    
+
 def msmarco_query_type_to_tsv(dataDir, readFile, wrtDir, transParamDict, isTrainFile=False):
 
     """
-    This function transforms the MSMARCO QnA data available at `MSMARCO_QnA <https://microsoft.github.io/msmarco/>`_ 
+    This function transforms the MSMARCO QnA data available at `MSMARCO_QnA <https://microsoft.github.io/msmarco/>`_
     for query-type detection task (given a query sentence, detect what type of answer is expected). Queries are divided
     into 5 query types - NUMERIC, LOCATION, ENTITY, DESCRIPTION, PERSON. The function transforms the json data
     to standard single sentence classification type tsv data. Following transformed files are written at wrtDir
@@ -520,11 +523,11 @@ def msmarco_query_type_to_tsv(dataDir, readFile, wrtDir, transParamDict, isTrain
         readFile (:obj:`str`) : This is the file which is currently being read and transformed by the function.
         wrtDir (:obj:`str`) : Path to the directory where to save the transformed tsv files.
         transParamDict (:obj:`dict`, defaults to :obj:`None`): Dictionary requiring the following parameters as key-value
-            
+
             - ``data_frac`` (defaults to 0.05) : Fraction of data to consider for downsampling.
 
     """
-    
+
     transParamDict.setdefault("data_frac", 0.05)
 
     print('Reading data file {}'.format(readFile))
@@ -548,19 +551,19 @@ def msmarco_query_type_to_tsv(dataDir, readFile, wrtDir, transParamDict, isTrain
         joblib.dump(labelMap, labelMapPath)
         print('Created label map file at', labelMapPath)
 
-        
+
 def imdb_sentiment_data_to_tsv(dataDir, readFile, wrtDir, transParamDict, isTrainFile=False):
-    
+
     """
     This function transforms the IMDb moview review data available at `IMDb <https://www.kaggle.com/lakshmi25npathi/imdb-dataset-of-50k-movie-reviews/data>`_ after accepting the terms.
-    
+
     The data is having total 50k samples labeled as `positive` or `negative`. The reviews have some html tags which are cleaned
     by this function. Following transformed files are written at wrtDir
 
 
     - IMDb train transformed tsv file for sentiment analysis task
     - IMDb test transformed tsv file for sentiment analysis task
-    
+
     For using this transform function, set ``transform_func`` : **imdb_sentiment_data_to_tsv** in transform file.
 
     Args:
@@ -568,43 +571,43 @@ def imdb_sentiment_data_to_tsv(dataDir, readFile, wrtDir, transParamDict, isTrai
         readFile (:obj:`str`) : This is the file which is currently being read and transformed by the function.
         wrtDir (:obj:`str`) : Path to the directory where to save the transformed tsv files.
         transParamDict (:obj:`dict`, defaults to :obj:`None`): Dictionary of function specific parameters. Not required for this transformation function.
-        
+
             - ``train_frac`` (defaults to 0.05) : Fraction of data to consider for train/test split.
     """
     transParamDict.setdefault("train_frac", 0.9)
     print('Making data from file ', readFile)
     df = pd.read_csv(os.path.join(dataDir, readFile))
-    
+
     #cleaning review text
     tt = re.compile('\t')
     cleanr = re.compile('<.*?>|&([a-z0-9]+|#[0-9]{1,6}|#x[0-9a-f]{1,6});')
-    
+
     df['review'] = [re.sub(tt, ' ', review) for review in df['review'] ]
     df['review'] = [re.sub(cleanr, ' ', review) for review in df['review'] ]
-    
+
     df['uid'] = [str(i) for i in range(len(df))]
     df = df[['uid', 'sentiment', 'review']]
-    # train test 
+    # train test
     dfTrain, dfTest = train_test_split(df, shuffle=False, test_size=1-float(transParamDict["train_frac"]),
                                       random_state=SEED)
-    
+
     print('Number of samples in train: ', len(dfTrain))
     print('Number of samples in test: ', len(dfTest))
-    
+
     #writing train file
     dfTrain.to_csv(os.path.join(wrtDir, 'imdb_sentiment_train.tsv'), sep='\t',index=False,header=False)
     print('Train file written at: ', os.path.join(wrtDir, 'imdb_sentiment_train.tsv'))
-    
+
     #writing test file
     dfTest.to_csv(os.path.join(wrtDir, 'imdb_sentiment_test.tsv'), sep='\t',index=False,header=False)
     print('Test file written at: ', os.path.join(wrtDir, 'imdb_sentiment_test.tsv'))
-    
+
 def qqp_query_similarity_to_tsv(dataDir, readFile, wrtDir, transParamDict, isTrainFile=False):
-    
+
     """
-    This function transforms the QQP (Quora Question Pairs) query similarity data available at `QQP <http://qim.fs.quoracdn.net/quora_duplicate_questions.tsv>`_ 
-    
-    If the second query is similar to first query in a query-pair, the pair is labeled -> 1 and if not, then 
+    This function transforms the QQP (Quora Question Pairs) query similarity data available at `QQP <http://qim.fs.quoracdn.net/quora_duplicate_questions.tsv>`_
+
+    If the second query is similar to first query in a query-pair, the pair is labeled -> 1 and if not, then
     labeled -> 0.
     Following transformed files are written at wrtDir
 
@@ -622,35 +625,35 @@ def qqp_query_similarity_to_tsv(dataDir, readFile, wrtDir, transParamDict, isTra
 
             - ``train_frac`` (defaults to 0.8) : Fraction of data to consider for training. Remaining will be divided into dev and test.
     """
-    
+
     transParamDict.setdefault("train_frac", 0.8)
-    
+
     print("Making data from file {} ...".format(readFile))
-    
+
     readDf = pd.read_csv(os.path.join(dataDir, readFile), sep="\t")
     wrtDf = readDf[['id', 'is_duplicate', 'question1', 'question2']]
-    
+
     # writing train file
     trainDf, testDf = train_test_split(wrtDf, shuffle=True, random_state=SEED,
                                       test_size = 1 - float(transParamDict["train_frac"]))
     trainDf.to_csv(os.path.join(wrtDir, 'qqp_query_similarity_train.tsv'), sep="\t",
                   index=False, header=False)
     print('Train file saved at: {}'.format(os.path.join(wrtDir, 'qqp_query_similarity_train.tsv')))
-    
+
     #writing dev file
     devDf, testDf = train_test_split(testDf, shuffle=True, random_state=SEED,
                                     test_size  = 0.5)
     devDf.to_csv(os.path.join(wrtDir, 'qqp_query_similarity_dev.tsv'), sep="\t",
                   index=False, header=False)
     print('Dev file saved at: {}'.format(os.path.join(wrtDir, 'qqp_query_similarity_dev.tsv')))
-    
+
     #writing test file
     testDf.to_csv(os.path.join(wrtDir, 'qqp_query_similarity_test.tsv'), sep="\t",
-                  index=False, header=False)   
+                  index=False, header=False)
     print('Test file saved at: {}'.format(os.path.join(wrtDir, 'qqp_query_similarity_test.tsv')))
-    
 
-    
+
+
 def query_correctness_to_tsv(dataDir, readFile, wrtDir, transParamDict, isTrainFile=False):
 
     """
@@ -668,22 +671,22 @@ def query_correctness_to_tsv(dataDir, readFile, wrtDir, transParamDict, isTrainF
     """
     print('Making data from file {}'.format(readFile))
     df = pd.read_csv(os.path.join(dataDir, readFile), sep='\t', header=None, names = ['query', 'label'])
-    
+
     # we consider anything above 0.6 as structured query (3 or more annotations as structured), and others as non-structured
-    
+
     #df['label'] = [str(lab) for lab in df['label']]
     df['label'] = [int(lab>=0.6)for lab in df['label']]
-    
+
     data = [ [str(i), str(row['label']), row['query'] ] for i, row in df.iterrows()]
-    
+
     wrtDf = pd.DataFrame(data, columns = ['uid', 'label', 'query'])
-    
+
     #writing
     wrtDf.to_csv(os.path.join(wrtDir, 'query_correctness_{}'.format(readFile)), sep="\t", index=False, header=False)
     print('File saved at: ', os.path.join(wrtDir, 'query_correctness_{}'.format(readFile)))
-    
+
 def clinc_out_of_scope_to_tsv(dataDir, readFile, wrtDir, transParamDict, isTrainFile=False):
-    
+
     """
 
     For using this transform function, set ``transform_func`` : **clinc_out_of_scope_to_tsv** in transform file.
@@ -693,36 +696,36 @@ def clinc_out_of_scope_to_tsv(dataDir, readFile, wrtDir, transParamDict, isTrain
         readFile (:obj:`str`) : This is the file which is currently being read and transformed by the function.
         wrtDir (:obj:`str`) : Path to the directory where to save the transformed tsv files.
         transParamDict (:obj:`dict`, defaults to :obj:`None`): Dictionary requiring the following parameters as key-value
-            
+
             - ``samples_per_intent_train`` (defaults to 7) : Number of in-scope samples per intent to consider, as this data has imbalance for inscope and outscope
 
     """
     transParamDict.setdefault("samples_per_intent_train", 7)
-    
+
     print("Making data from file {} ...".format(readFile))
     raw = json.load(open(os.path.join(dataDir, readFile)))
-    
+
     print('Num of train samples in-scope: ', len(raw['train']))
     inScopeTrain = defaultdict(list)
     for sentence, intent in raw['train']:
         inScopeTrain[intent].append(sentence)
 
-    #sampling 
+    #sampling
     inscopeSampledTrain = []
     numSamplesPerInt = 7
     random.seed(SEED)
     for intent in inScopeTrain:
         inscopeSampledTrain += random.sample(inScopeTrain[intent], int(transParamDict["samples_per_intent_train"]))
-        
+
     print('Num of sampled train samples in-scope: ', len(inscopeSampledTrain))
     #out of scope train
     outscopeTrain = [sample[0] for sample in raw['oos_train']]
     print('Num of train out-scope samples: ', len(outscopeTrain))
-    
+
     #train data
     allTrain = inscopeSampledTrain + outscopeTrain
     allTrainLabels = [1]*len(inscopeSampledTrain) + [0]*len(outscopeTrain)
-    
+
     #writing train data file
     trainF = open(os.path.join(wrtDir, 'clinc_outofscope_train.tsv'), 'w')
     for uid, (samp, lab) in enumerate(zip(allTrain, allTrainLabels)):
@@ -740,7 +743,7 @@ def clinc_out_of_scope_to_tsv(dataDir, readFile, wrtDir, transParamDict, isTrain
     allDev = outscopeDev
     #allDevLabels = [1]*inscopeDev + [0]*outscopeDev
     allDevLabels = [0]*len(outscopeDev)
-    
+
     #writing dev data file
     devF = open(os.path.join(wrtDir, 'clinc_outofscope_dev.tsv'), 'w')
     for uid, (samp, lab) in enumerate(zip(allDev, allDevLabels)):
@@ -748,19 +751,122 @@ def clinc_out_of_scope_to_tsv(dataDir, readFile, wrtDir, transParamDict, isTrain
     print('Dev file written at: ', os.path.join(wrtDir, 'clinc_outofscope_dev.tsv'))
     devF.close()
 
-    #making test set 
+    #making test set
     inscopeTest = [sample[0] for sample in raw['test']]
     outscopeTest = [sample[0] for sample in raw['oos_test']]
     print('Num of test out-scope samples: ', len(outscopeTest))
     print('Num of test in-scope samples: ', len(inscopeTest))
-    
+
     allTest = inscopeTest + outscopeTest
     allTestLabels = [1]*len(inscopeTest) + [0]*len(outscopeTest)
-    
+
     #writing test data file
     testF = open(os.path.join(wrtDir, 'clinc_outofscope_test.tsv'), 'w')
     for uid, (samp, lab) in enumerate(zip(allTest, allTestLabels)):
         testF.write("{}\t{}\t{}\n".format(uid, lab, samp))
     print('Test file written at: ', os.path.join(wrtDir, 'clinc_outofscope_test.tsv'))
     testF.close()
-    
+
+
+    def kaggle_ner_pos_to_tsv(dataDir, readFile, wrtDir, transParamDict, isTrainFile=False):
+
+        """
+        This function transforms the data present in ner_pos_data/.
+        Raw data is in csv format format with the POS and NER tags separated by comma.
+        The transformation function converts the each raw data file into two separate tsv files,
+        one for POS tagging task and another for NER task. Following transformed files are written at wrtDir
+
+        - NER transformed tsv file.
+        - NER label map joblib file.
+        - POS transformed tsv file.
+        - POS label map joblib file.
+
+        For using this transform function, set ``transform_func`` : **kaggle_ner_to_tsv** in transform file.
+
+        Args:
+            dataDir (:obj:`str`) : Path to the directory where the raw data files to be read are present..
+            readFile (:obj:`str`) : This is the file which is currently being read and transformed by the function.
+            wrtDir (:obj:`str`) : Path to the directory where to save the transformed tsv files.
+            transParamDict (:obj:`dict`, defaults to :obj:`None`): Dictionary of function specific parameters. Not required for this transformation function.
+
+        """
+
+
+        csv_file = open(os.path.join(dataDir, readFile))
+        f = reader(csv_file)
+
+        # Skip the header part
+
+        header = next(f)
+
+        nerW = open(os.path.join(wrtDir, 'ner_{}.tsv'.format(readFile.split('.')[0])), 'w')
+        posW = open(os.path.join(wrtDir, 'pos_{}.tsv'.format(readFile.split('.')[0])), 'w')
+
+        labelMapNer = {}
+        labelMapPos = {}
+
+        sentence = []
+        senLens = []
+        labelNer = []
+        labelPos = []
+        uid = 0
+
+        print("Making data from file {} ...".format(readFile))
+
+        for i, line in enumerate(f):
+            if i%5000 == 0:
+                print("Processing {} rows...".format(i))
+
+            wordSplit = line
+
+            if len(line[1])=='.' or line[0].startswith('Sentence'):
+
+                if len(sentence) > 0:
+
+                    nerW.write("{}\t{}\t{}\n".format(uid, labelNer, sentence))
+                    posW.write("{}\t{}\t{}\n".format(uid, labelPos, sentence))
+                    senLens.append(len(sentence))
+
+                    #print("len of sentence :", len(sentence))
+
+                    sentence = []
+                    labelNer = []
+                    labelPos = []
+                    uid += 1
+                continue
+
+            sentence.append(wordSplit[1])
+            labelPos.append(wordSplit[-2])
+            labelNer.append(wordSplit[-1])
+
+            if isTrainFile:
+                if wordSplit[-1] not in labelMapNer:
+                    # ONLY TRAIN FILE SHOULD BE USED TO CREATE LABEL MAP FILE.
+                    labelMapNer[wordSplit[-1]] = len(labelMapNer)
+                if wordSplit[-2] not in labelMapPos:
+                    labelMapPos[wordSplit[-2]] = len(labelMapPos)
+
+        print("NER File Written at {}".format(wrtDir))
+        print("POS File Written at {}".format(wrtDir))
+        #writing label map
+        if labelMapNer != {} and isTrainFile:
+            print("Created NER label map from train file {}".format(readFile))
+            print(labelMapNer)
+            labelMapNerPath = os.path.join(wrtDir, "ner_{}_label_map.joblib".format(readFile.split('.')[0]))
+            joblib.dump(labelMapNer, labelMapNerPath)
+            print("label Map NER written at {}".format(labelMapNerPath))
+
+        if labelMapPos != {} and isTrainFile:
+            print("Created POS label map from train file {}".format(readFile))
+            print(labelMapPos)
+            labelMapPosPath = os.path.join(wrtDir, "pos_{}_label_map.joblib".format(readFile.split('.')[0]))
+            joblib.dump(labelMapPos, labelMapPosPath)
+            print("label Map POS written at {}".format(labelMapPosPath))
+
+        csv_file.close()
+        nerW.close()
+        posW.close()
+
+        print('Max len of sentence: ', max(senLens))
+        print('Mean len of sentences: ', sum(senLens)/len(senLens))
+        print('Median len of sentences: ', median(senLens))
